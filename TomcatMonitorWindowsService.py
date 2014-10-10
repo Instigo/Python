@@ -10,6 +10,15 @@ import servicemanager
 import logging
 import time
 
+# Description: The purpose for this script was to monitor the Tomcat7.exe process within Windows and
+# to keep track of the CPU utilization.  This script can be further expanded to provide email alerts,
+# automatic killing of the Tomcat7.exe process (if high CPU lingers over a period of time).  
+#
+# Main Requirements: Python 2.7, Modules: {psutil,pywin32, python WMI}
+#
+
+# Setup the basic configuration for logging state information
+#
 logging.basicConfig(
     filename = 'C:\\Program Files (x86)\\Atlassian\\JIRA\\logs\\Tomcat-Cpu-Service.log',
     level = logging.DEBUG,
@@ -23,21 +32,27 @@ class TomcatSvc(win32serviceutil.ServiceFramework):
     # this text shows up as the description in the SCM
     _svc_description_ = "This services monitors the CPU utilization for Tomcat7.exe"
     
+    # path to the JIRA logs 
     _svc_log_folder = "C:\\Program Files (x86)\\Atlassian\\JIRA\\logs\\"
+
+    # name of the file to log the CPU percentage 
     _svc_log_filename = "tomcat-cpu-log.txt"
     
     numTimesExecuted = 0
-    process_name = u'tomcat7'
     now = datetime.datetime.now()
     start_time = time.clock()
-    c = wmi.WMI()
-    process = None
-    memory_percent = None
 
-    # loop over all processes
-    for current_process in c.Win32_Process ():
-        if process_name in current_process.Name:
-            process = psutil.Process(current_process.ProcessId)
+    # windows management instrumentation interface
+    wm = wmi.WMI()
+
+    process = None
+    processNameToFind = u'tomcat7'
+    memory_percent = None
+   
+    # loop over all processes looking for the process
+    for currentProcess in wm.Win32_Process ():
+        if processNameToFind in currentProcess.Name:
+            process = psutil.Process(currentProcess.ProcessId)
             break
 
     def __init__(self, args):
@@ -56,7 +71,6 @@ class TomcatSvc(win32serviceutil.ServiceFramework):
         # This is how long the service will wait to run / refresh itself
         self.timeout = 1000 # (value is in milliseconds)
         
-        #logging.info('Executing Service DoRun() Function')
         while 1:
             # Wait for service stop signal, if I timeout, loop again
             rc = win32event.WaitForSingleObject(self.hWaitStop, self.timeout)
