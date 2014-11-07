@@ -50,7 +50,7 @@ class TomcatSvc(win32serviceutil.ServiceFramework):
 
     processNameToFind = u'tomcat7.exe'
     memory_percent = None
-    executionFrequency = 100 # number of seconds in an 30 minute span
+    executionFrequency = 1800 # number of seconds in an 30 minute span
 
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self,args)
